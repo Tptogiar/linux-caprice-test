@@ -10,7 +10,7 @@ int main()
 	//打开字符设备驱动程序
     int fd = open("/dev/mydev", O_RDWR);
 	if(fd < 0) {
-		perror("open");		
+		perror("/dev/mydev");		
 	}
 
 	//调用三次sleep,主动进行调度，让出CPU

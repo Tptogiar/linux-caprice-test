@@ -24,7 +24,7 @@ static void hello_sched_in(struct preempt_notifier *notifier, int cpu)
 	printk("\n");
 }
 
-任务被抢占时通知机制操作
+//任务被抢占时通知机制操作
 static void hello_sched_out(struct preempt_notifier *notifier,
 	struct task_struct *next)
 {
