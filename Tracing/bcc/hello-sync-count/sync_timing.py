@@ -10,7 +10,6 @@
 
 from __future__ import print_function
 from bcc import BPF
-from bcc.utils import printb
 
 # load BPF program
 b = BPF(text="""
@@ -18,8 +17,17 @@ b = BPF(text="""
 
 BPF_HASH(last);
 
+
 int do_trace(struct pt_regs *ctx) {
-    u64 ts, *tsp, delta, key = 0,key_count = 1,*pre_count_ptr,pre_count = 0;
+    u64 ts, *tsp, delta, key = 0,*pre_count_ptr,key_count = 1,zero = 0;
+
+
+    pre_count_ptr = last.lookup_or_try_init(&key_count,&zero);
+    if (pre_count_ptr != NULL) {
+        *pre_count_ptr = *pre_count_ptr + 1;
+        last.update(&key_count,pre_count_ptr);
+        bpf_trace_printk("system call sync count = %ld ",*pre_count_ptr); 
+    }
 
     // attempt to read stored timestamp
     tsp = last.lookup(&key);
@@ -27,7 +35,7 @@ int do_trace(struct pt_regs *ctx) {
         delta = bpf_ktime_get_ns() - *tsp;
         if (delta < 1000000000) {
             // output if time is less than 1 second
-            bpf_trace_printk("%d\\n", delta / 1000000);
+            bpf_trace_printk("multiple sync detected , last %d ms ago", delta / 1000000);
         }
         last.delete(&key);
     }
@@ -35,13 +43,7 @@ int do_trace(struct pt_regs *ctx) {
     // update stored timestamp
     ts = bpf_ktime_get_ns();
     last.update(&key, &ts);
-
-    pre_count_ptr = last.lookup(&key_count);
-    if (pre_count_ptr != NULL) {
-        pre_count = *pre_count_ptr + 1;
-        last.update(&key_count,&pre_count);
-    }
-    bpf_trace_printk("\\nsystem call sync count = %d \\n",pre_count); 
+    bpf_trace_printk("\\n");
 
     return 0;
 }
@@ -58,7 +60,7 @@ while 1:
         if start == 0:
             start = ts
         ts = ts - start
-        printb(b"At time %.2f s: multiple syncs detected, last %s ms ago" % (ts, ms))
+        print(ms);
     except KeyboardInterrupt:
         exit()
 
