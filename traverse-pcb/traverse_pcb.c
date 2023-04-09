@@ -25,6 +25,7 @@ static int __init traverse_pcb(void)
 		p = list_entry(pos,struct task_struct,tasks);//指向当前进程的task_struct结构
 		count++;//统计系统进程个数
 		printk("\n\n");//方便查看后续打印信息
+			       
 		/*
 		打印task_struct中的字段，其中pid：进程的pid号；state：进程的状态；
 		prio:动态优先级；static_prio:静态优先级; parent'pid:父进程的pid号；
@@ -32,11 +33,17 @@ static int __init traverse_pcb(void)
 		使用atomic_read原子操作是为了(p->files)->count字段计数不被打断
 		*/
 		printk("pid:%d; state:%lx; prio:%d; static_prio:%d; parent'pid:%d; count:%d; umask:%d;",	\
-			p->pid,p->__state,p->prio,p->static_prio,(p->parent)->pid,								\
+			p->pid,p->__state,p->prio,p->static_prio,(p->parent)->pid,			\
 			atomic_read((&(p->files)->count)),(p->fs)->umask);
+
 		//打印进程地址空间的信息
-		if((p->mm)!=NULL)
+		if((p->mm)!=NULL) {
 			printk("total_vm:%ld;",(p->mm)->total_vm);//total_vm：线性区总的页数
+								  
+								  
+								  
+								  
+		}
 	}
 	printk("进程的个数：%d\n",count);//打印进程个数
 	return 0;
