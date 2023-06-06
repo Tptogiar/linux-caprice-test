@@ -1,6 +1,7 @@
 obj-m := schdule.o
 
-all:
+build: kernel_modules
+kernel_modules:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
 clean:
