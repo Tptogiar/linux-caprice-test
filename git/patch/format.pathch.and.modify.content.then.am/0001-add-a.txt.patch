@@ -1,0 +1,40 @@
+From e15a4b0904e9544f75b25fa3aae46bd8d0f9443e Mon Sep 17 00:00:00 2001
+From: testTptogiar <tptogiar@meta.com>
+Date: Tue, 4 Jul 2023 16:58:34 +0800
+Subject: [PATCH] add a.txt
+
+Signed-off-by: testTptogiar <tptogiar@meta.com>
+---
+ git/patch/format.pathch.and.modify.content.then.am/a.txt | 8 ++++++++
+ git/patch/{ => rename.or.delete.file}/a.txt              | 0
+ git/patch/{ => rename.or.delete.file}/b/b.txt            | 0
+ 3 files changed, 8 insertions(+)
+ create mode 100644 git/patch/format.pathch.and.modify.content.then.am/a.txt
+ rename git/patch/{ => rename.or.delete.file}/a.txt (100%)
+ rename git/patch/{ => rename.or.delete.file}/b/b.txt (100%)
+
+diff --git a/git/patch/format.pathch.and.modify.content.then.am/a.txt b/git/patch/format.pathch.and.modify.content.then.am/a.txt
+new file mode 100644
+index 0000000..0b69521
+--- /dev/null
++++ b/git/patch/format.pathch.and.modify.content.then.am/a.txt
+@@ -0,0 +1,8 @@
++aaaa
++bbbb
++cccc
++dddd
++eeee
++ffff
++ggggg
++
+diff --git a/git/patch/a.txt b/git/patch/rename.or.delete.file/a.txt
+similarity index 100%
+rename from git/patch/a.txt
+rename to git/patch/rename.or.delete.file/a.txt
+diff --git a/git/patch/b/b.txt b/git/patch/rename.or.delete.file/b/b.txt
+similarity index 100%
+rename from git/patch/b/b.txt
+rename to git/patch/rename.or.delete.file/b/b.txt
+-- 
+2.27.0
+
