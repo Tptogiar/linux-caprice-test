@@ -1,0 +1,312 @@
+From ae729740b4a533410b741657c9309c18888e79aa Mon Sep 17 00:00:00 2001
+From: root <2528891112@qq.com>
+Date: Thu, 23 Mar 2023 17:33:13 +0800
+Subject: [PATCH 1/3] add sched-notifier
+
+---
+ sched-notifier/Makefile |   9 +++
+ sched-notifier/my_dev.c | 123 ++++++++++++++++++++++++++++++++++++++++
+ sched-notifier/test.c   |  26 +++++++++
+ 3 files changed, 158 insertions(+)
+ create mode 100644 sched-notifier/Makefile
+ create mode 100644 sched-notifier/my_dev.c
+ create mode 100644 sched-notifier/test.c
+
+diff --git a/sched-notifier/Makefile b/sched-notifier/Makefile
+new file mode 100644
+index 0000000..0e2762d
+--- /dev/null
++++ b/sched-notifier/Makefile
+@@ -0,0 +1,9 @@
++obj-m := schdule.o
++
++all:
++	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
++
++clean:
++	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
++
++
+diff --git a/sched-notifier/my_dev.c b/sched-notifier/my_dev.c
+new file mode 100644
+index 0000000..91711e3
+--- /dev/null
++++ b/sched-notifier/my_dev.c
+@@ -0,0 +1,123 @@
++
++
++//schdule.c
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/fs.h>
++#include <linux/preempt.h>
++#include <linux/device.h>
++#include <linux/cdev.h>
++
++#define DEVICE_NAME "mydev"
++#define CLASS_NAME  "hello_class"
++
++static struct class *helloClass;
++static struct cdev my_dev;
++struct preempt_notifier hello_preempt;
++dev_t dev;
++
++//任务被重新调度时通知机制操作
++static void hello_sched_in(struct preempt_notifier *notifier, int cpu)
++{
++	printk("task is about to be rescheduled\n");
++	printk("\n");
++}
++
++任务被抢占时通知机制操作
++static void hello_sched_out(struct preempt_notifier *notifier,
++	struct task_struct *next)
++{
++	printk("task is just been preempted\n");
++}
++
++//注册通知回调函数
++struct preempt_ops hello_preempt_ops = {
++	.sched_in = hello_sched_in,
++	.sched_out = hello_sched_out,
++};
++
++static int my_dev_open(struct inode *inode, struct file *file){
++
++    preempt_notifier_init(&hello_preempt, &hello_preempt_ops);
++    preempt_notifier_inc();
++
++    preempt_notifier_register(&hello_preempt);
++
++    printk("open!\n");
++
++    return 0;
++}
++
++static int my_dev_close(struct inode *inode, struct file *file){
++
++    preempt_notifier_unregister(&hello_preempt);
++
++    preempt_notifier_dec();
++
++
++    printk("close!\n");
++
++    return 0;
++}
++
++static const struct file_operations my_dev_fops = {
++    .owner              = THIS_MODULE,
++    .open               = my_dev_open,
++    .release            = my_dev_close,
++};
++
++static int __init hello_init(void)
++{
++    int ret;
++    dev_t dev_no;
++    int Major;
++    struct device *helloDevice;
++
++	//动态地分配设备标识
++    ret = alloc_chrdev_region(&dev_no, 0, 1, DEVICE_NAME);
++
++    Major = MAJOR(dev_no);
++    dev = MKDEV(Major, 0);
++
++	//初始化字符设备
++    cdev_init(&my_dev, &my_dev_fops);
++    //将字符设备注册到内核
++    ret = cdev_add(&my_dev, dev, 1);
++
++	//创建类别class
++    helloClass = class_create(THIS_MODULE, CLASS_NAME);
++    if(IS_ERR(helloClass)){
++        unregister_chrdev_region(dev, 1);
++        cdev_del(&my_dev);
++        return -1;
++    }
++
++	//创建设备节点
++    helloDevice = device_create(helloClass, NULL, dev, NULL, DEVICE_NAME);
++    if(IS_ERR(helloDevice)){
++        class_destroy(helloClass);
++        unregister_chrdev_region(dev, 1);
++        cdev_del(&my_dev);
++
++        return -1;
++    }
++
++    return 0;
++
++}
++
++static void __exit hello_exit(void)
++{
++    device_destroy(helloClass, dev);
++    class_destroy(helloClass);
++    cdev_del(&my_dev);
++    unregister_chrdev_region(dev, 1);
++}
++
++module_init(hello_init);
++module_exit(hello_exit);
++
++MODULE_LICENSE("GPL");
++
++
+diff --git a/sched-notifier/test.c b/sched-notifier/test.c
+new file mode 100644
+index 0000000..a8a930d
+--- /dev/null
++++ b/sched-notifier/test.c
+@@ -0,0 +1,26 @@
++//用户层测试文件 test.c
++
++#include <stdio.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++
++int main()
++{
++	//打开字符设备驱动程序
++    int fd = open("/dev/mydev", O_RDWR);
++	if(fd < 0) {
++		perror("open");		
++	}
++
++	//调用三次sleep,主动进行调度，让出CPU
++    for(int i = 0; i<3; i++) {
++		sleep(1);
++	}
++
++    printf("success!!\n");
++
++    close(fd);
++    return 0;
++}
++
+-- 
+2.27.0
+
+
+From 7671faf0cde67d2f60b9f25f31d262d23aa82dc3 Mon Sep 17 00:00:00 2001
+From: root <2528891112@qq.com>
+Date: Thu, 23 Mar 2023 18:09:01 +0800
+Subject: [PATCH 2/3] modified for Makefile for install
+
+---
+ sched-notifier/Makefile | 18 ++++++++++++++++--
+ sched-notifier/my_dev.c |  2 +-
+ sched-notifier/test.c   |  2 +-
+ 3 files changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/sched-notifier/Makefile b/sched-notifier/Makefile
+index 0e2762d..e49d16d 100644
+--- a/sched-notifier/Makefile
++++ b/sched-notifier/Makefile
+@@ -1,9 +1,23 @@
+-obj-m := schdule.o
++obj-m := my_dev.o
+ 
+-all:
++test_out :=test.dev.out
++
++build-module:
+ 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+ 
++install-module:
++	insmod my_dev.ko
++
++uninstall-module:
++	rmmod my_dev
++
+ clean:
+ 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
++	rm -rf ./$(test_out)
++
++build-test:
++	gcc test.c -o $(test_out)
+ 
++test:
++	./test.out
+ 
+diff --git a/sched-notifier/my_dev.c b/sched-notifier/my_dev.c
+index 91711e3..d11ec71 100644
+--- a/sched-notifier/my_dev.c
++++ b/sched-notifier/my_dev.c
+@@ -24,7 +24,7 @@ static void hello_sched_in(struct preempt_notifier *notifier, int cpu)
+ 	printk("\n");
+ }
+ 
+-任务被抢占时通知机制操作
++//任务被抢占时通知机制操作
+ static void hello_sched_out(struct preempt_notifier *notifier,
+ 	struct task_struct *next)
+ {
+diff --git a/sched-notifier/test.c b/sched-notifier/test.c
+index a8a930d..25bec05 100644
+--- a/sched-notifier/test.c
++++ b/sched-notifier/test.c
+@@ -10,7 +10,7 @@ int main()
+ 	//打开字符设备驱动程序
+     int fd = open("/dev/mydev", O_RDWR);
+ 	if(fd < 0) {
+-		perror("open");		
++		perror("/dev/mydev");		
+ 	}
+ 
+ 	//调用三次sleep,主动进行调度，让出CPU
+-- 
+2.27.0
+
+
+From f4c826665f8e33e976fd36d45c3e1bb682753c18 Mon Sep 17 00:00:00 2001
+From: root <2528891112@qq.com>
+Date: Fri, 24 Mar 2023 16:48:05 +0800
+Subject: [PATCH 3/3] modified for sche-notifier Makefile
+
+---
+ sched-notifier/Makefile | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/sched-notifier/Makefile b/sched-notifier/Makefile
+index e49d16d..7631e14 100644
+--- a/sched-notifier/Makefile
++++ b/sched-notifier/Makefile
+@@ -5,19 +5,23 @@ test_out :=test.dev.out
+ build-module:
+ 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+ 
+-install-module:
++build-test:
++	gcc test.c -o $(test_out)
++
++
++insmod:
+ 	insmod my_dev.ko
+ 
+-uninstall-module:
++rmmod:
+ 	rmmod my_dev
+ 
++
++test:
++	./test.out
++
++
+ clean:
+ 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+ 	rm -rf ./$(test_out)
+ 
+-build-test:
+-	gcc test.c -o $(test_out)
+-
+-test:
+-	./test.out
+ 
+-- 
+2.27.0
+

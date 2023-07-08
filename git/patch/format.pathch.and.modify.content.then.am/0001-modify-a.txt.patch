@@ -1,0 +1,23 @@
+From c0f62d3e9fa7f0bc55ebb6554dbcf7215de9cf09 Mon Sep 17 00:00:00 2001
+From: Tptogiar <tptogiar@gmail.com>
+Date: Tue, 4 Jul 2023 18:01:46 +0800
+Subject: [PATCH] modify a.txt
+
+Signed-off-by: Tptogiar <tptogiar@gmail.com>
+---
+ git/patch/format.pathch.and.modify.content.then.am/a.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/git/patch/format.pathch.and.modify.content.then.am/a.txt b/git/patch/format.pathch.and.modify.content.then.am/a.txt
+index 0b69521..809f99b 100644
+--- a/git/patch/format.pathch.and.modify.content.then.am/a.txt
++++ b/git/patch/format.pathch.and.modify.content.then.am/a.txt
+@@ -5,4 +5,4 @@ dddd
+ eeee
+ ffff
+ gggg
+-
++hhhh
+-- 
+2.27.0
+

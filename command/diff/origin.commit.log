@@ -1,0 +1,18 @@
+commit f4c826665f8e33e976fd36d45c3e1bb682753c18
+Author: root <2528891112@qq.com>
+Date:   Fri Mar 24 16:48:05 2023 +0800
+
+    modified for sche-notifier Makefile
+
+commit 7671faf0cde67d2f60b9f25f31d262d23aa82dc3
+Author: root <2528891112@qq.com>
+Date:   Thu Mar 23 18:09:01 2023 +0800
+
+    modified for Makefile for install
+
+commit ae729740b4a533410b741657c9309c18888e79aa
+Author: root <2528891112@qq.com>
+Date:   Thu Mar 23 17:33:13 2023 +0800
+
+    add sched-notifier
+
