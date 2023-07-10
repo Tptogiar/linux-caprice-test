@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 aaab
 bbb
 ccc
 ddd
+=======
+aaaa
+bbb
+>>>>>>> 452a814... add command: diff and make
